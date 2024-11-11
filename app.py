@@ -5,6 +5,7 @@ import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
+from rag.azure_search_rag import AzureSearchRAG
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -12,11 +13,13 @@ logger = logging.getLogger(__name__)
 
 @st.cache_resource
 def get_rag_systems():
-    collection_name = "chroma_docs"
-    persist_directory = os.getenv("PERSIST_DIRECTORY")  # Remove fallback
+    collection_name = "docs-index"
     return {
         "Chroma Azure RAG": ChromaAzureRAG(
-            persist_directory=persist_directory,
+            persist_directory=os.getenv("PERSIST_DIRECTORY"),
+            collection_name="chroma_docs"
+        ),
+        "Azure Search RAG": AzureSearchRAG(
             collection_name=collection_name
         )
     }
@@ -24,6 +27,10 @@ def get_rag_systems():
 def main():
     st.set_page_config(layout="wide")
     st.title("Azure-Powered RAG System")
+    
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
     
     rag_systems = get_rag_systems()
     
@@ -56,38 +63,72 @@ def main():
                 st.success(f"Successfully processed {chunks} chunks from {uploaded_file.name}")
             except Exception as e:
                 st.error(f"Error processing file: {str(e)}")
-        
-        if st.button("Show Collection Stats"):
-            try:
-                stats = rag_systems[selected_rag].get_collection_stats()
-                st.json(stats)
-            except Exception as e:
-                st.error(f"Error getting stats: {str(e)}")
-            
-        if st.button("Clear Collection"):
-            try:
-                rag_systems[selected_rag].delete_collection()
-                st.success("Collection cleared successfully!")
-            except Exception as e:
-                st.error(f"Error clearing collection: {str(e)}")
 
-    # Main content area
-    st.header("Query Documents")
-    query = st.text_input("Enter your question:")
+    # Chat interface
+    st.header("Chat with Documents")
+    
+    # Display chat history
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+            if "sources" in message:
+                with st.expander("View Sources"):
+                    for i, doc in enumerate(message["sources"], 1):
+                        source_file = doc.metadata.get('source')
+                        page = doc.metadata.get('page', 'N/A')
+                        filename = doc.metadata.get('filename', Path(source_file).name if source_file else 'Unknown')
+                        
+                        st.markdown(f"**Source {i}:** {filename}")
+                        st.markdown(f"**Page:** {page}")
+                        if source_file:
+                            st.markdown(f"[Open Source File]({source_file})")
+                        st.markdown("---")
+                        st.markdown("**Relevant Content:**")
+                        st.markdown(doc.page_content)
+
+    # Query input
+    query = st.chat_input("Ask a question about your documents:")
     
     if query:
-        try:
+        # Display user message
+        with st.chat_message("user"):
+            st.markdown(query)
+        st.session_state.messages.append({"role": "user", "content": query})
+        
+        # Generate and display assistant response
+        with st.chat_message("assistant"):
             with st.spinner("Searching..."):
-                response = rag_systems[selected_rag].query(query, k=k_value)
-                
-                st.markdown("### Answer")
-                st.write(response["answer"])
-                
-                st.markdown("### Sources")
-                for i, doc in enumerate(response["sources"], 1):
-                    st.write(f"{i}. {doc.metadata.get('filename', doc.metadata.get('source', 'Unknown source'))}")
-        except Exception as e:
-            st.error(f"Error processing query: {str(e)}")
+                try:
+                    response = rag_systems[selected_rag].query(query, k=k_value)
+                    st.markdown(response["answer"])
+                    
+                    with st.expander("View Sources"):
+                        for i, doc in enumerate(response["sources"], 1):
+                            source_file = doc.metadata.get('source')
+                            page = doc.metadata.get('page', 'N/A')
+                            filename = doc.metadata.get('filename', Path(source_file).name if source_file else 'Unknown')
+                            
+                            st.markdown(f"**Source {i}:** {filename}")
+                            st.markdown(f"**Page:** {page}")
+                            if source_file:
+                                st.markdown(f"[Open Source File]({source_file})")
+                            st.markdown("---")
+                            st.markdown("**Relevant Content:**")
+                            st.markdown(doc.page_content)
+                    
+                    # Save assistant response with sources
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": response["answer"],
+                        "sources": response["sources"]
+                    })
+                except Exception as e:
+                    error_msg = f"Error processing query: {str(e)}"
+                    st.error(error_msg)
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": error_msg
+                    })
 
 if __name__ == "__main__":
     main()

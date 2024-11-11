@@ -14,13 +14,20 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def process_documents(rag_type="chroma", delete="no", collection_name="chroma_docs"):  # Default to same collection
+from rag.azure_search_rag import AzureSearchRAG  # Add import
+
+def process_documents(rag_type="chroma", delete="no", collection_name=None):
     try:
-        persist_directory = os.getenv("PERSIST_DIRECTORY")
-        rag = ChromaAzureRAG(
-            persist_directory=persist_directory,
-            collection_name=collection_name
-        )
+        if rag_type == "chroma":
+            persist_directory = os.getenv("PERSIST_DIRECTORY")
+            rag = ChromaAzureRAG(
+                persist_directory=persist_directory,
+                collection_name=collection_name
+            )
+        elif rag_type == "azure_search":
+            rag = AzureSearchRAG(collection_name=collection_name)
+        else:
+            raise ValueError(f"Unsupported RAG type: {rag_type}")
         
         if delete.lower() == "yes":
             logger.info(f"Deleting collection: {collection_name}")
