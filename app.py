@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from dotenv import load_dotenv
 from rag.azure_search_rag import AzureSearchRAG
+from rag.light_rag import LightRAG
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +22,10 @@ def get_rag_systems():
         ),
         "Azure Search RAG": AzureSearchRAG(
             collection_name=collection_name
+        ),
+        "Light RAG": LightRAG(
+            persist_directory="./document_store/light_db",
+            collection_name="light_docs"
         )
     }
 

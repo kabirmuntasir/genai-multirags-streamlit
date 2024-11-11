@@ -8,7 +8,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import logging
 from dotenv import load_dotenv
 from rag.chroma_azure_rag import ChromaAzureRAG
-# from rag.azure_search_rag import AzureSearchRAG  # To be implemented later
+from rag.light_rag import LightRAG
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -26,6 +26,12 @@ def process_documents(rag_type="chroma", delete="no", collection_name=None):
             )
         elif rag_type == "azure_search":
             rag = AzureSearchRAG(collection_name=collection_name)
+            
+        elif rag_type == "light":  # Add this case
+            rag = LightRAG(
+                persist_directory="./document_store/light_db",
+                collection_name=collection_name
+            )
         else:
             raise ValueError(f"Unsupported RAG type: {rag_type}")
         
