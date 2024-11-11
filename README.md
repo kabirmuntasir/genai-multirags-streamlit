@@ -1,4 +1,4 @@
-# Azure-Powered RAG System
+# GENAI-Powered Multiple RAGS
 
 This repository contains an implementation of a Retrieval-Augmented Generation (RAG) system powered by Azure services. The system supports multiple RAG implementations, including Chroma Azure RAG, Azure Search RAG, and Light RAG. It provides a Streamlit-based interface for document upload, querying, and performance evaluation.
 
