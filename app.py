@@ -1,12 +1,14 @@
 import streamlit as st
 from rag.chroma_azure_rag import ChromaAzureRAG
+from rag.azure_search_rag import AzureSearchRAG
+from rag.light_rag import LightRAG
 import tempfile
 import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
-from rag.azure_search_rag import AzureSearchRAG
-from rag.light_rag import LightRAG
+from evaluate_rags import evaluate_rag_system
+import pandas as pd
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -68,6 +70,21 @@ def main():
                 st.success(f"Successfully processed {chunks} chunks from {uploaded_file.name}")
             except Exception as e:
                 st.error(f"Error processing file: {str(e)}")
+        
+        st.header("Performance Evaluation")
+        if st.button("Evaluate Performance"):
+            queries = ["What is the CRD number of FORD FINANCIAL?", "Tell me about FORD ASSET MANAGEMENT, LLC"]
+            true_answers = ["173099", "173099"]
+            
+            results = {}
+            for name, rag_system in rag_systems.items():
+                st.write(f"Evaluating {name}...")
+                results[name] = evaluate_rag_system(rag_system, queries, true_answers)
+            
+            st.write("Performance Results:")
+            metrics_df = pd.DataFrame(results).T
+            st.dataframe(metrics_df)
+            st.bar_chart(metrics_df)
 
     # Chat interface
     st.header("Chat with Documents")
@@ -90,7 +107,7 @@ def main():
                         st.markdown("---")
                         st.markdown("**Relevant Content:**")
                         st.markdown(doc.page_content)
-
+    
     # Query input
     query = st.chat_input("Ask a question about your documents:")
     
