@@ -18,14 +18,14 @@ logger = logging.getLogger(__name__)
 def get_rag_systems():
     collection_name = "docs-index"
     return {
-        "Chroma Azure RAG": ChromaAzureRAG(
+        "Regular RAG (Chroma DB)": ChromaAzureRAG(
             persist_directory=os.getenv("PERSIST_DIRECTORY"),
             collection_name="chroma_docs"
         ),
-        "Azure Search RAG": AzureSearchRAG(
+        "Regular RAG (Azure AI Search)": AzureSearchRAG(
             collection_name=collection_name
         ),
-        "Light RAG": LightRAG(
+        "Light RAG (Nano DB)": LightRAG(
             persist_directory="./document_store/light_db",
             collection_name="light_docs"
         )
@@ -33,7 +33,7 @@ def get_rag_systems():
 
 def main():
     st.set_page_config(layout="wide")
-    st.title("Azure-Powered RAG System")
+    st.title("Multiple RAG System")
     
     # Initialize chat history
     if "messages" not in st.session_state:
@@ -85,7 +85,7 @@ def main():
             metrics_df = pd.DataFrame(results).T
             st.dataframe(metrics_df)
             st.bar_chart(metrics_df)
-
+    
     # Chat interface
     st.header("Chat with Documents")
     

@@ -153,7 +153,7 @@ class LightRAG:
             
             return {
                 "query": query_text,
-                "answer": result.get("result", "No answer found"),
+                "answer": result.get("result", "No answer found") + "\n\n*Powered by Light RAG (Nano DB)*",
                 "sources": result.get("source_documents", [])
             }
             

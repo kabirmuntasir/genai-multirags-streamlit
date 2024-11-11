@@ -99,7 +99,7 @@ class ChromaAzureRAG:
             result = qa_chain({"query": query_text})
             return {
                 "query": query_text,
-                "answer": result["result"],
+                "answer": result["result"]+ "\n\n*Powered by Regular RAG (Chroma DB)*",
                 "sources": result["source_documents"]
             }
         except Exception as e:

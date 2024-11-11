@@ -77,15 +77,10 @@ class AzureSearchRAG:
 
     def query(self, query_text, k=4):
         try:
-            # Create retriever with vector search configuration
             retriever = self.vector_store.as_retriever(
-                search_type="similarity",  # Change to similarity search
-                search_kwargs={
-                    "size": k  # Use size parameter instead of top
-                }
+                search_type="similarity",
+                search_kwargs={"size": k}
             )
-            
-            # Create QA chain
             qa_chain = RetrievalQA.from_chain_type(
                 llm=AzureChatOpenAI(
                     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
@@ -98,17 +93,12 @@ class AzureSearchRAG:
                 return_source_documents=True
             )
             
-            # Use invoke with proper error handling
             result = qa_chain.invoke({"query": query_text})
-            if not result:
-                raise ValueError("No result returned from query chain")
-                
             return {
                 "query": query_text,
-                "answer": result.get("result", "No answer found"),
+                "answer": result.get("result", "No answer found") + "\n\n*Powered by Regular RAG (Azure AI Search)*",
                 "sources": result.get("source_documents", [])
             }
-            
         except Exception as e:
             logger.error(f"Error in query: {str(e)}")
             raise

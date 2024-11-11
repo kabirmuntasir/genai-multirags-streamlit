@@ -4,10 +4,10 @@
 set -e
 
 # Create a virtual environment
-python -m venv .venv
+# python -m venv .venv
 
 # Activate the virtual environment
-source .venv/bin/activate
+# source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -24,4 +24,4 @@ python utils/preprocess.py --rag_type light --delete yes --collection_name light
 
 # Run the Streamlit app
 echo "Starting Streamlit app..."
-streamlit run app.py
+streamlit run app.py --server.port ${PORT:-8000} --server.address 0.0.0.0
